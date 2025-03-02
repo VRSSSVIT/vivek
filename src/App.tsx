@@ -1,79 +1,118 @@
 import React, { useState } from 'react';
 import { Palette } from 'lucide-react';
 import ImageUploader from './components/ImageUploader';
-import AnalysisResults from './components/AnalysisResults';
-import { analyzeSkinTone, getSeasonalPalettes } from './utils/skinToneAnalyzer';
-import { SkinToneResult } from './types';
+import AnalysisResult from './components/AnalysisResult';
+import LoadingSpinner from './components/LoadingSpinner';
+import { analyzeSkinTone, getColorRecommendations } from './utils/colorUtils';
+import { SkinToneResult, ColorRecommendation } from './types';
 
 function App() {
+  const [imageData, setImageData] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [skinToneResult, setSkinToneResult] = useState<SkinToneResult | null>(null);
-  const [colorRecommendations, setColorRecommendations] = useState<Record<string, { colors: string[]; description: string }> | null>(null);
-  const [recommendedSeasons, setRecommendedSeasons] = useState<string[] | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<SkinToneResult | null>(null);
+  const [colorRecommendations, setColorRecommendations] = useState<ColorRecommendation[]>([]);
 
-  const handleImageSelected = async (image: HTMLImageElement) => {
+  const handleImageCaptured = async (data: string) => {
+    setImageData(data);
     setIsAnalyzing(true);
-    setSkinToneResult(null);
-    setColorRecommendations(null);
-    setRecommendedSeasons(null);
     
     try {
-      // Simulate loading time for the AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Analyze skin tone
-      const result = await analyzeSkinTone(image);
-      setSkinToneResult(result);
+      // In a real app, this would use TensorFlow.js to analyze the image
+      const result = await analyzeSkinTone(data);
+      setAnalysisResult(result);
       
       // Get color recommendations based on undertone
-      const { recommended, all } = getSeasonalPalettes(result.undertone);
-      setRecommendedSeasons(recommended);
-      setColorRecommendations(all);
+      const recommendations = getColorRecommendations(result.undertone);
+      setColorRecommendations(recommendations);
     } catch (error) {
       console.error('Error analyzing image:', error);
-      // Handle error state here
+      // Handle error state
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-        <header className="text-center mb-10">
-          <div className="flex items-center justify-center mb-4">
-            <Palette size={36} className="text-purple-600 mr-2" />
-            <h1 className="text-3xl font-bold text-gray-800">AI Skin Tone Analyzer</h1>
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center">
+            <Palette className="h-8 w-8 text-blue-600 mr-3" />
+            <h1 className="text-2xl font-bold text-gray-900">AI Skin Tone Analyzer</h1>
           </div>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Upload or capture a photo of your face to analyze your skin tone and get personalized color recommendations based on seasonal palettes.
-          </p>
-        </header>
-
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Step 1: Upload or Capture Your Photo</h2>
-          <ImageUploader onImageSelected={handleImageSelected} />
         </div>
-
-        {(isAnalyzing || skinToneResult) && (
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Step 2: View Your Results</h2>
-            <AnalysisResults
-              isLoading={isAnalyzing}
-              skinToneResult={skinToneResult}
-              colorRecommendations={colorRecommendations}
-              recommendedSeasons={recommendedSeasons}
-            />
+      </header>
+      
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Upload or capture a photo of your face</h2>
+            <p className="text-gray-600 mb-6">
+              Our AI will analyze your skin tone and provide personalized color recommendations.
+              For best results, use a well-lit photo with a neutral background.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-medium mb-3">Your Photo</h3>
+                <ImageUploader onImageCaptured={handleImageCaptured} />
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-3">Results</h3>
+                {isAnalyzing ? (
+                  <LoadingSpinner />
+                ) : analysisResult ? (
+                  <AnalysisResult 
+                    result={analysisResult} 
+                    recommendations={colorRecommendations} 
+                  />
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <p className="text-gray-500">
+                      Upload or capture a photo to see your skin tone analysis and color recommendations
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-
-        <footer className="mt-12 text-center text-sm text-gray-500">
-          <p>
-            Note: This is a demonstration using simulated AI analysis. In a production environment, 
-            this would use properly trained models for accurate skin tone analysis.
+        </div>
+        
+        <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-4">How It Works</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-4 border rounded-lg">
+                <div className="text-blue-600 font-bold text-lg mb-2">1. Upload Photo</div>
+                <p className="text-gray-600">
+                  Upload a clear photo of your face or use your camera to capture one in good lighting.
+                </p>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <div className="text-blue-600 font-bold text-lg mb-2">2. AI Analysis</div>
+                <p className="text-gray-600">
+                  Our AI analyzes your skin tone using advanced computer vision and maps it to the Monk Skin Tone Scale.
+                </p>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <div className="text-blue-600 font-bold text-lg mb-2">3. Get Recommendations</div>
+                <p className="text-gray-600">
+                  Receive personalized color recommendations based on your skin tone and undertone.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <footer className="bg-white mt-12 py-6 border-t">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-gray-500 text-sm">
+            © 2025 AI Skin Tone Analyzer. All rights reserved.
           </p>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
   );
 }
