@@ -55,7 +55,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               Your skin tone is{' '}
               <span 
                 className="font-bold" 
-                style={{ color: toneColor }}
               >
                 {skinToneResult.tone}
               </span>{' '}
