@@ -1,5 +1,5 @@
 import React from 'react';
-import { SkinToneResult, ColorRecommendation } from '../types';
+import { SkinToneResult} from '../types';
 
 interface AnalysisResultsProps {
   isLoading: boolean;
